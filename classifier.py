@@ -44,7 +44,7 @@ def classify(views):
     baseline = median(views)
     if baseline == 0:
         post = views[at + 1 :]
-        drop = round(sum(post[:_POST_WINDOW]) / len(post[:_POST_WINDOW]) / peak, 3) if post else 1.0
+        drop = round(sum(post[:_POST_WINDOW]) / len(post[:_POST_WINDOW]) / peak, 3) if post and peak else 1.0
         flat = _flat_score(views, at)
         return {
             "verdict": "inconclusive",

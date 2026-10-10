@@ -42,9 +42,13 @@ def _serve():
 
 
 def _post(port, path, payload):
+    return _request(port, "POST", path, payload)
+
+
+def _request(port, method, path, payload):
     data = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
     req = urllib.request.Request(
-        f"http://127.0.0.1:{port}{path}", data=data, method="POST",
+        f"http://127.0.0.1:{port}{path}", data=data, method=method,
         headers={"Content-Type": "application/json"},
     )
     try:
@@ -53,7 +57,7 @@ def _post(port, path, payload):
     except urllib.error.HTTPError as err:
         raw = err.read()
         err.close()
-        return err.code, json.loads(raw.decode())
+        return err.code, json.loads(raw.decode()) if raw.strip() else None
 
 
 class TestClassifyContract(unittest.TestCase):
@@ -76,6 +80,15 @@ class TestClassifyContract(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body, SUSPICIOUS_RESPONSE)
 
+    def test_all_zero_series_is_inconclusive_200(self):
+        status, body = _post(self.port, "/classify", {"views": [0] * 24})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["verdict"], "inconclusive")
+        self.assertEqual(
+            body["signals"],
+            {"spike_ratio": float("inf"), "drop_ratio": 1.0, "flat_score": 1.0},
+        )
+
     def test_invalid_series_is_422(self):
         bad = [
             {"views": []},
@@ -84,6 +97,9 @@ class TestClassifyContract(unittest.TestCase):
             {"views": BASE_24[:23] + [-5]},
             {"views": BASE_24[:23] + ["x"]},
             {"views": BASE_24[:23] + [True]},
+            {"views": BASE_24[:23] + [float("nan")]},
+            {"views": BASE_24[:23] + [float("inf")]},
+            {"views": BASE_24[:23] + [float("-inf")]},
             {},
             {"views": "nope"},
         ]
@@ -104,6 +120,14 @@ class TestClassifyContract(unittest.TestCase):
         self.assertEqual(status, 404)
         status, _ = _post(self.port, "/nope", {"views": BASE_24})
         self.assertEqual(status, 404)
+
+    def test_unknown_route_is_404_for_all_methods(self):
+        for method in ("GET", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"):
+            with self.subTest(method=method):
+                status, body = _request(self.port, method, "/nope", b"{}")
+                self.assertEqual(status, 404)
+                if method != "HEAD":
+                    self.assertEqual(body, {"error": "not found"})
 
 
 if __name__ == "__main__":

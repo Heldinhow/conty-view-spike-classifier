@@ -2,25 +2,24 @@
 
 Reads the canonical line EXPECTED_FP=<0.00-1.00> from README.md via
 regex and compares it against the false-positive rate obtained by
-re-running the classifier nucleus over data/dataset.json, tolerance
+re-running the classifier nucleus over generate(42) in memory, tolerance
 +/-0.005. Inconclusive never counts as a false positive.
 Fails with a clear message when the README line is missing or stale
 (ticket 05 owns writing the line); tampering with the number turns
 this test red.
 """
 
-import json
 import re
 import unittest
 
 from classifier import classify
+from dataset import generate
 
 TOLERANCE = 0.005
 
 
 def measured_fp():
-    with open("data/dataset.json") as fh:
-        dataset = json.load(fh)
+    dataset = generate(42)
     legit = [row for row in dataset if row["kind"] == "legitimate"]
     fps = sum(1 for row in legit if classify(row["views"])["verdict"] == "suspicious")
     return fps / len(legit)

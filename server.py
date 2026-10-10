@@ -39,7 +39,7 @@ class Handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length") or 0)
             body = json.loads(self.rfile.read(length).decode() or "null")
             result = classify(_extract_views(body))
-        except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
+        except (ValueError, ArithmeticError, json.JSONDecodeError, UnicodeDecodeError):
             return _send(self, 422, {"error": "invalid series"})
         return _send(self, 200, result)
 
@@ -49,6 +49,8 @@ class Handler(BaseHTTPRequestHandler):
     do_PUT = do_GET
     do_DELETE = do_GET
     do_PATCH = do_GET
+    do_HEAD = do_GET
+    do_OPTIONS = do_GET
 
     def log_message(self, *args):
         pass
