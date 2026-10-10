@@ -50,15 +50,25 @@ def classify(views):
             "verdict": "inconclusive",
             "reason": (
                 "série com mediana zerada, sem baseline para medir o pico "
-                f"(spike_ratio=inf, drop_ratio={drop}, flat_score={flat}); "
+                f"(spike_ratio=null, drop_ratio={drop}, flat_score={flat}); "
                 "inconclusivo por falta de referência, nunca suspeito."
             ),
-            "signals": {"spike_ratio": float("inf"), "drop_ratio": drop, "flat_score": flat},
+            "signals": {"spike_ratio": None, "drop_ratio": drop, "flat_score": flat},
         }
     spike = round(peak / baseline, 3)
     post = views[at + 1 :]
     drop = round(sum(post[:_POST_WINDOW]) / len(post[:_POST_WINDOW]) / peak, 3) if post else 1.0
     flat = _flat_score(views, at)
+    if peak == baseline:
+        return {
+            "verdict": "legitimate",
+            "reason": (
+                "base estável: nenhum pico acima da mediana "
+                f"(spike_ratio={spike}, drop_ratio={drop}, "
+                f"flat_score={flat})."
+            ),
+            "signals": {"spike_ratio": spike, "drop_ratio": drop, "flat_score": flat},
+        }
     if at == 0 or at == total - 1:
         return {
             "verdict": "inconclusive",

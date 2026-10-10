@@ -7,6 +7,7 @@ Classifica uma série de views por hora como `legitimate`, `suspicious` ou `inco
 - Pico de 5x ou mais sobre a mediana com queda abrupta (`drop_ratio<=0.4`) ou platô mecânico (`flat_score>=0.4`) é `suspicious`; o motivo cita nominalmente os sinais que decidiram.
 - Pico entre 3x e 5x sobre a mediana é `inconclusive`: zona cinzenta que prefere não acusar e nunca conta como falso positivo.
 - Série com mediana zerada ou pico na borda temporal (sem baseline ou sem pós-pico para medir a queda) é `inconclusive`, nunca `suspicious`.
+- Sem nenhum ponto acima da mediana (série constante, pico 1.0x) é `legitimate`.
 - Série válida tem de 24 a 168 pontos, só números não-negativos; fora disso a API devolve 422.
 - Rota desconhecida devolve 404 com precedência sobre 422 (`404 > 422`).
 - Taxa de falso positivo medida sobre o dataset sintético: `EXPECTED_FP=0.0000` (0/100 legítimas marcadas como suspeitas; inconclusivas sobre legítimas: 0.0300, só reportada).
@@ -41,7 +42,7 @@ Os testes descrevem o comportamento esperado.
 | Série inválida (vazia, fora da janela 24–168, negativa ou não-numérica) | 422 | `{"error":"invalid series"}` |
 | Rota desconhecida (qualquer método) | 404 | `{"error":"not found"}` |
 
-Precedência de erro: `404 > 422` — rota desconhecida devolve 404 mesmo com corpo inválido. `reason` é texto legível que cita os sinais; `spike_ratio=inf` (mediana zerada) só ocorre em veredito `inconclusive`.
+Precedência de erro: `404 > 422` — rota desconhecida devolve 404 mesmo com corpo inválido. `reason` é texto legível que cita os sinais; `spike_ratio=null` (mediana zerada, sem baseline) só ocorre em veredito `inconclusive`.
 
 ## Exemplos
 

@@ -10,6 +10,7 @@ ABRUPT = [100, 102, 98, 650, 70, 65, 105, 100]
 GRAY = [100, 102, 98, 350, 300, 250, 120, 105]
 ZERO_MEDIAN = [0, 0, 0, 0, 50, 0, 0, 0]
 ALL_ZERO = [0] * 24
+CONSTANT = [50] * 24
 EDGE_FIRST = [900, 95, 100, 98, 102, 99, 101, 100]
 EDGE_LAST = [100, 99, 101, 98, 102, 100, 99, 900]
 
@@ -23,6 +24,11 @@ class TestObviousCases(unittest.TestCase):
         self.assertEqual(res["signals"]["flat_score"], 0.0)
         # Same input twice gives the same output.
         self.assertEqual(classify(STABLE), res)
+
+    def test_exact_constant_series_is_legitimate(self):
+        res = classify(CONSTANT)
+        self.assertEqual(res["verdict"], "legitimate")
+        self.assertEqual(res["signals"]["spike_ratio"], 1.0)
 
     def test_bought_plateau_is_suspicious(self):
         res = classify(PLATEAU)
@@ -50,14 +56,14 @@ class TestGrayZone(unittest.TestCase):
     def test_zero_median_is_inconclusive_never_suspicious(self):
         res = classify(ZERO_MEDIAN)
         self.assertEqual(res["verdict"], "inconclusive")
-        self.assertEqual(res["signals"]["spike_ratio"], float("inf"))
+        self.assertIsNone(res["signals"]["spike_ratio"])
         self.assertEqual(res["signals"]["drop_ratio"], 0.0)
         self.assertEqual(res["signals"]["flat_score"], 0.6)
 
     def test_all_zero_is_inconclusive_never_raises(self):
         res = classify(ALL_ZERO)
         self.assertEqual(res["verdict"], "inconclusive")
-        self.assertEqual(res["signals"]["spike_ratio"], float("inf"))
+        self.assertIsNone(res["signals"]["spike_ratio"])
         self.assertEqual(res["signals"]["drop_ratio"], 1.0)
         self.assertEqual(res["signals"]["flat_score"], 1.0)
 
@@ -72,7 +78,7 @@ class TestGrayZone(unittest.TestCase):
 
 class TestReason(unittest.TestCase):
     def test_reasons_cite_signals_in_plain_words(self):
-        for series in (STABLE, PLATEAU, ABRUPT, GRAY, ZERO_MEDIAN, ALL_ZERO, EDGE_FIRST, EDGE_LAST):
+        for series in (STABLE, PLATEAU, ABRUPT, GRAY, ZERO_MEDIAN, ALL_ZERO, EDGE_FIRST, EDGE_LAST, CONSTANT):
             with self.subTest(series=series):
                 reason = classify(series)["reason"]
                 self.assertIsInstance(reason, str)

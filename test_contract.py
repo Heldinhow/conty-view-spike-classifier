@@ -86,8 +86,14 @@ class TestClassifyContract(unittest.TestCase):
         self.assertEqual(body["verdict"], "inconclusive")
         self.assertEqual(
             body["signals"],
-            {"spike_ratio": float("inf"), "drop_ratio": 1.0, "flat_score": 1.0},
+            {"spike_ratio": None, "drop_ratio": 1.0, "flat_score": 1.0},
         )
+
+    def test_exact_constant_series_is_legitimate_200(self):
+        status, body = _post(self.port, "/classify", {"views": [50] * 24})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["verdict"], "legitimate")
+        self.assertEqual(body["signals"]["spike_ratio"], 1.0)
 
     def test_invalid_series_is_422(self):
         bad = [
