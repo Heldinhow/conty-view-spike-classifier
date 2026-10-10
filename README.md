@@ -14,7 +14,7 @@ Classifica uma série de views por hora como `legitimate`, `suspicious` ou `inco
 
 ## Como rodar
 
-Python 3, só standard library, sem dependências para instalar.
+Python 3, só biblioteca padrão, sem dependências para instalar.
 
 ```bash
 python3 scripts/eval.py --seed 42
